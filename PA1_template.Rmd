@@ -117,7 +117,3 @@ plot(avg_steps_days[avg_steps_days$day_type=="Weekend",1],
      xlab ="Time Interval",xaxt="n",xlim = c(0,2400), ylab="Average steps taken",type="l")
 axis(side = 1, at=seq(0,2400,30), lwd.ticks=1)
 ```
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
