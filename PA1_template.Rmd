@@ -1,0 +1,136 @@
+---
+title: 'Reproducible Research: Peer Assessment 1'
+author: "Robert Deprizio"
+date: "6/1/2018"
+output:
+  html_document: default
+  pdf_document: default
+keep_md: yes
+---
+
+## Loading and preprocessing the data
+
+```{r preprocessing}
+#setting my working directory
+setwd("/Users/user/datasciencecoursera")
+
+#Reading in data 
+rawdata <- read.csv("data/activity.csv")
+rawdata$date<-as.Date(rawdata$date)
+```
+
+## What is mean total number of steps taken per day?
+
+Reporting total steps for each day 
+```{r MeanSteps1}
+total_steps<-aggregate(list(TotalSteps=rawdata$steps),by=list(Date=rawdata$date),sum,na.omit=TRUE)
+print(total_steps)
+```
+
+Reporting mean & median of total steps per day ignoring days with no data
+```{r MeanSteps2}
+total_steps$Mean<-tapply(rawdata$steps,rawdata$date,mean,na.omit=TRUE)
+total_steps$Median<-tapply(rawdata$steps,rawdata$date,median,na.omit=TRUE)
+total_steps<-na.omit(total_steps)
+print(total_steps)
+```
+
+
+Histogram for the total number of steps taken each day
+```{r plot1, echo=TRUE}
+hist(total_steps$TotalSteps,main="Histogram of Total Steps Taken Each Day",
+   xlab = "Number of Steps per Day",col="blue")
+```
+
+
+
+## What is the average daily activity pattern?
+
+Calculating average steps taken for each interval across all days excluding days without data
+```{r AvgDaily1}
+interval_means<-aggregate(list(Steps=rawdata$steps), list(Interval=rawdata$interval),  mean,na.rm = TRUE)
+```
+
+
+Time series plot of the 5-minute intervals and the average number of steps taken in each, averaged across all days 
+```{r plot2, echo=TRUE}
+plot(interval_means$Interval,interval_means$Steps,main="Average Daily Activity Pattern",xlab ="Time Interval",xaxt="n",xlim = c(0,2400), ylab="Average steps taken",type="l")
+axis(side = 1, at=seq(0,2400,30), lwd.ticks=1)
+```
+
+
+Time interval with highest average and it's average
+```{r AvgDaily2}
+interval_means[interval_means$Steps==max(interval_means$Steps),]
+```
+
+## Imputing missing values
+
+Calculating and reporting the total number of missing values in the dataset
+```{r Imputting1}
+sum(is.na(rawdata))
+```
+
+Creating new data set that imputs the respective daily interval average, 
+(across all days) into intervals that had missing values 
+```{r Imputting2}
+rawdata2<-rawdata
+rawdata2$steps<-ifelse(!is.na(rawdata2$steps), rawdata2$steps, interval_means$Steps)
+```
+
+
+Calculate the total steps taken per day for new data set
+```{r Imputting3}
+total_steps2<-aggregate(list(Steps=rawdata2$steps),by=list(Date=rawdata2$date),sum)
+```
+
+
+Histogram of total steps taken each day for new data set
+```{r plot3, echo=TRUE}
+hist(total_steps2$Steps,main="Histogram of Total Steps Taken Each Day (New data set)",xlab = "Number of Steps per Day",col="red")
+```
+
+
+
+Reporting mean and median across all days for new data set
+```{r Imputting4}
+#Calculate mean & median of total steps per day for new data set
+total_steps2$Mean<-tapply(rawdata2$steps,rawdata2$date,mean)
+total_steps2$Median<-tapply(rawdata2$steps,rawdata2$date,median)
+print(total_steps2)
+```
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+Creating 2 new variables that label the day of the week and day type 
+```{r weekdays1}
+rawdata2$day_of_week<-weekdays(rawdata2$date)
+rawdata2$day_type<-ifelse(rawdata2$day_of_week=="Saturday"|rawdata2$day_of_week=="Sunday","Weekend","Weekday")
+```
+
+
+Calculating the average steps taken per interval across weekends and week days
+```{r weekdays2}
+avg_steps_days<-aggregate(steps ~ interval + day_type, data = rawdata2, mean)
+```
+
+Plotting average steps per interval for weekdays and weekends 
+```{r plot4, echo=TRUE}
+plot(avg_steps_days[avg_steps_days$day_type=="Weekday",1],
+     avg_steps_days[avg_steps_days$day_type=="Weekday",3],
+     main="Average Daily Activity Pattern by interval (Weekdays)",
+     xlab ="Time Interval",xaxt="n",xlim = c(0,2400), ylab="Average steps taken",type="l")
+axis(side = 1, at=seq(0,2400,30), lwd.ticks=1)
+
+plot(avg_steps_days[avg_steps_days$day_type=="Weekend",1],
+     avg_steps_days[avg_steps_days$day_type=="Weekend",3],
+     main="Average Daily Activity Pattern by interval (Weekends)",
+     xlab ="Time Interval",xaxt="n",xlim = c(0,2400), ylab="Average steps taken",type="l")
+axis(side = 1, at=seq(0,2400,30), lwd.ticks=1)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
